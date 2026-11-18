@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Stats } from '../types'
-import { halfBlockCells } from './sprite'
+import { halfBlockCells, svgAnimation } from './sprite'
 import type { Glyph } from './sprite'
 import { ANIMATIONS, MEDIUM, SPRITE_COLUMNS, SPRITE_ROWS } from './frames'
 import { LARGE, LARGE_COLUMNS, LARGE_ROWS } from './frames-large'
@@ -24,10 +24,28 @@ function encode(anims: Animations) {
   return { sleep: cells('sleep'), attack: cells('attack'), charge: cells('charge') }
 }
 
-const LOOKS: Record<Size, { columns: number; rows: number; ms: Record<Figure, number>; cells: Record<Figure, string[]> }> = {
-  small: { columns: SPRITE_COLUMNS, rows: SPRITE_ROWS, ms: msOf(ANIMATIONS), cells: encode(ANIMATIONS) },
-  medium: { columns: SPRITE_COLUMNS * 2, rows: SPRITE_ROWS * 2, ms: msOf(MEDIUM), cells: encode(MEDIUM) },
-  large: { columns: LARGE_COLUMNS, rows: LARGE_ROWS, ms: msOf(LARGE), cells: encode(LARGE) },
+// The same frames as animated SVG for the surfaces without Raster (desktop,
+// VS Code, mobile); one pixel is PIXEL CSS pixels, about a terminal half-cell.
+const PIXEL = 8
+type Svg = ReturnType<typeof svgAnimation>
+function encodeSvg(anims: Animations): Record<Figure, Svg> {
+  const svg = (f: Figure) => svgAnimation(anims[f].frames, anims[f].ms, PIXEL)
+  return { sleep: svg('sleep'), attack: svg('attack'), charge: svg('charge') }
+}
+
+type Look = { columns: number; rows: number; ms: Record<Figure, number>; cells: Record<Figure, string[]>; svg: Record<Figure, Svg> }
+const makeLook = (columns: number, rows: number, anims: Animations): Look => ({ columns, rows, ms: msOf(anims), cells: encode(anims), svg: encodeSvg(anims) })
+
+const LOOKS: Record<Size, Look> = {
+  small: makeLook(SPRITE_COLUMNS, SPRITE_ROWS, ANIMATIONS),
+  medium: makeLook(SPRITE_COLUMNS * 2, SPRITE_ROWS * 2, MEDIUM),
+  large: makeLook(LARGE_COLUMNS, LARGE_ROWS, LARGE),
+}
+
+const ALT: Record<Figure, string> = {
+  sleep: 'Sir Pip, a pixel-art squire, asleep',
+  attack: 'Sir Pip, a pixel-art squire, swinging his sword',
+  charge: 'Sir Pip, a pixel-art squire, charging on horseback',
 }
 
 function msOf(anims: Animations): Record<Figure, number> {
@@ -194,11 +212,12 @@ export const register: Register = (on, options) => {
     const fits = SIZES.slice(0, SIZES.indexOf(chosen) + 1).filter(size => LOOKS[size].rows <= e.props.maxRows)
     const look = LOOKS[fits[fits.length - 1] ?? 'small']
 
+    const figure: Figure = !e.props.isWorking ? 'sleep' : (await read($, isCharging)) ? 'charge' : 'attack'
+    if (figure === 'charge' && s.health > 10) pip.line = 'Charge!'
+
     let sprite = null
     if (e.surface === 'terminal') {
       const { Raster } = $.ui.resolve(e)
-      const figure: Figure = !e.props.isWorking ? 'sleep' : (await read($, isCharging)) ? 'charge' : 'attack'
-      if (figure === 'charge' && s.health > 10) pip.line = 'Charge!'
       const frames = look.cells[figure]
       const key = `pip-${look.columns}-${figure}`
       if (ticker === null || tickerFigure !== key) {
@@ -215,7 +234,14 @@ export const register: Register = (on, options) => {
       }
       sprite = <Raster key={key} columns={look.columns} rows={look.rows} cells={frames[frame % frames.length]!} />
     } else {
+      // No Raster here: the frames go as one SVG that animates itself, so no ticker.
       stopTicker()
+      const elements = $.ui.resolve(e)
+      if ('Svg' in elements) {
+        const { Svg } = elements
+        const art = look.svg[figure]
+        sprite = <Svg key={`pip-${look.columns}-${figure}`} source={art.source} width={art.width} height={art.height} alt={ALT[figure]} />
+      }
     }
 
     return (

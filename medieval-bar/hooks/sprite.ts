@@ -53,3 +53,50 @@ export function halfBlockCells(grid: readonly (readonly number[])[], glyphs: rea
   }
   return toBase64(new Uint8Array(Uint32Array.from(words).buffer))
 }
+
+const hex = (color: number) => `#${(color & 0xffffff).toString(16).padStart(6, '0')}`
+const escapeXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/** One frame as SVG shapes: runs of same-colored pixels as rects, glyphs as text over their cell. */
+function svgFrame(grid: readonly (readonly number[])[], glyphs: readonly Glyph[], px: number): string {
+  let out = ''
+  grid.forEach((row, y) => {
+    for (let x = 0; x < row.length; ) {
+      const color = row[x]!
+      let end = x + 1
+      while (end < row.length && row[end] === color) end++
+      if (color >= 0) out += `<rect x="${x * px}" y="${y * px}" width="${(end - x) * px}" height="${px}" fill="${hex(color)}"/>`
+      x = end
+    }
+  })
+  for (const g of glyphs) {
+    const cx = (g.col + 0.5) * px
+    const cy = (g.row * 2 + 1) * px
+    out += `<text x="${cx}" y="${cy}" font-family="monospace" font-size="${px * 1.6}" text-anchor="middle" dominant-baseline="central" fill="${hex(g.color)}">${escapeXml(g.ch)}</text>`
+  }
+  return out
+}
+
+/**
+ * An SVG document for surfaces without `Raster`: the same pixel frames, each
+ * pixel `px` CSS pixels square, cycled every `ms` by SMIL. Where SMIL does not
+ * run, the first frame stands.
+ */
+export function svgAnimation(frames: readonly { grid: readonly (readonly number[])[]; glyphs: readonly Glyph[] }[], ms: number, px: number): { source: string; width: number; height: number } {
+  const first = frames[0]?.grid ?? []
+  const width = (first[0]?.length ?? 0) * px
+  const height = first.length * px
+  const n = frames.length
+  const dur = `${(n * ms) / 1000}s`
+  const groups = frames.map((f, i) => {
+    const shapes = svgFrame(f.grid, f.glyphs, px)
+    if (n < 2) return `<g>${shapes}</g>`
+    const anim =
+      i === 0
+        ? `<animate attributeName="visibility" values="visible;hidden" keyTimes="0;${1 / n}" calcMode="discrete" dur="${dur}" repeatCount="indefinite"/>`
+        : `<animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0;${i / n};${(i + 1) / n}" calcMode="discrete" dur="${dur}" repeatCount="indefinite"/>`
+    return `<g visibility="${i === 0 ? 'visible' : 'hidden'}">${anim}${shapes}</g>`
+  })
+  const source = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" shape-rendering="crispEdges">${groups.join('')}</svg>`
+  return { source, width, height }
+}
