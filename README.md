@@ -2,7 +2,7 @@
 
 A Claude Code mod that adds a medieval RPG-style stat bar above your prompt, with **Sir Pip**, an animated pixel-art mascot who reacts to what Claude is doing.
 
-![Sir Pip's three looks beside the stat bar](docs/preview.gif)
+![Sir Pip's three looks beside the stat bar](medieval-bar/docs/preview.gif)
 
 ## What the bar shows
 
@@ -29,7 +29,7 @@ When Health runs low, his lines change to remind you to rest.
 
 ### Sizes
 
-![The three sizes side by side](docs/sizes.png)
+![The three sizes side by side](medieval-bar/docs/sizes.png)
 
 | Size | Height | Style |
 | --- | --- | --- |
