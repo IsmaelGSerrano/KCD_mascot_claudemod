@@ -8,6 +8,12 @@ In a real session, Sir Pip naps above the prompt while he waits for a quest:
 
 ![The bar in a live Claude Code session](medieval-bar/docs/screenshot.png)
 
+In the Claude desktop app, Sir Pip is drawn in pixels too, asleep while idle and fighting while Claude works:
+
+![Sir Pip asleep in the desktop app](medieval-bar/docs/desktop-sleep.png)
+
+![Sir Pip swinging his sword in the desktop app](medieval-bar/docs/desktop-attack.png)
+
 ## What the bar shows
 
 | Stat | Meaning |
@@ -86,7 +92,7 @@ Replace the folder's contents with the new version and restart Claude Code. If y
 
 - Claude Code with function-hook mods (built against 2.1.316). The mod API is in early access and may change between releases.
 - **A terminal with 24-bit colour** for the pixel art: Windows Terminal, iTerm2, WezTerm, Kitty, VS Code's terminal and most modern Linux terminals work. The old Windows `cmd.exe` console may show the wrong colours.
-- The pixel art only draws in the terminal. On the desktop app Sir Pip falls back to a small text face (`[^_^]`). The VS Code extension and mobile don't show the bar at all.
+- In the terminal the pixel art is drawn with half-block characters. In the desktop app (and VS Code and mobile, where they show the bar) it is drawn as an animated SVG.
 
 ## Troubleshooting
 
@@ -111,7 +117,7 @@ medieval-bar/
 │   ├── frames.ts                small and medium figures and their frames
 │   ├── frames-large.ts          large figures and their frames
 │   ├── figures.ts               large figures' pixel data
-│   └── sprite.ts                draws pixels in the terminal with half-block characters
+│   └── sprite.ts                draws the pixels: half-block characters in the terminal, SVG elsewhere
 ├── types/index.d.ts             the mod's saved-state contract
 ├── tests/bar.test.tsx           tests
 └── docs/                        the preview images in this README
