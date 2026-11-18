@@ -4,6 +4,10 @@ A Claude Code mod that adds a medieval RPG-style stat bar above your prompt, wit
 
 ![Sir Pip's three looks beside the stat bar](medieval-bar/docs/preview.gif)
 
+In a real session, Sir Pip naps above the prompt while he waits for a quest:
+
+![The bar in a live Claude Code session](medieval-bar/docs/screenshot.png)
+
 ## What the bar shows
 
 | Stat | Meaning |
