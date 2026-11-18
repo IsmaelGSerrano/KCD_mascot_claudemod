@@ -1,0 +1,19 @@
+{
+  "name": "medieval-bar",
+  "version": "0.1.0",
+  "description": "A medieval RPG-style stat bar above the prompt: health, stamina, energy and groschen",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "size": {
+      "type": "string",
+      "title": "Mascot size",
+      "description": "How big Sir Pip is drawn: small (3 rows), medium (6 rows) or large (16 rows)",
+      "default": "small",
+      "options": [
+        "small",
+        "medium",
+        "large"
+      ]
+    }
+  }
+}
